@@ -137,9 +137,7 @@ Animation.prototype.display = function(time)
 
 		//set up
 		model_transform = mult( model_transform, translation( 1, -1, 0) );		
-		model_transform = mult( model_transform, scale(6, 1, 1) );
-		model_transform = mult(model_transform, rotation(40, 0, 0, 1));
-		this.m_cube.draw(this.graphicsState, model_transform, yellow);
+		//
 
 		//draw robot
 		var lean = this.graphicsState.animation_time; 
