@@ -171,13 +171,17 @@ function cube( points_transform )
 	}
 inherit(cube, shape);
 
-	cube.prototype.populate = function( recipient, points_transform )
-	{
-			var m_strip = new rectangular_strip(); 
-			for( var i = 0; i < 3; i++ )										// Build a cube by inserting six triangle strips into the lists.
-				for( var j = 0; j < 2; j++ )
-					m_strip.populate( recipient, 1, mult( points_transform, mult( rotation( 90, vec3( i==0, i==1, i==2 ) ), translation( j - .5, 0, 0 ) ) ) );
-	}
+  cube.prototype.populate = function (recipient, points_transform) 
+  {
+    var m_strip = new rectangular_strip();
+    for (var i = 0; i < 3; i++)		// Build a cube by inserting six triangle strips into the lists.
+        for (var j = 0; j < 2; j++) {
+            var transform = translation(-.5, 0, 0);                        // Left
+            transform = mult(rotation(180 * j, vec3(0, 0, 1)), transform); // Right if j
+            transform = mult(rotation(90, vec3(i == 0, -(i == 1), i == 2)), transform); // rotate to match face
+            m_strip.populate(recipient, 1, transform);
+        }
+  };	
 	
 
 function sphere( points_transform, max_subdivisions )		// Build a complicated sphere using subdivision, starting with a simple tetrahedron.  
@@ -388,3 +392,84 @@ function text_line( string_size )		// Draws a rectangle textured with images of 
 
 	}
 inherit(text_line, shape);
+
+function balloon()
+{
+	shape.call(this);
+	this.populate = (function (self)
+	{
+		self.m_ball = new sphere(); self.m_fan = new triangle_fan_full;
+
+		var object_transform = mat4();
+		var stack = [];
+		stack.push(object_transform);
+		object_transform = mult(object_transform, rotation(180, 0, 1, 0));
+		object_transform = mult(object_transform, rotation(90, 1, 0, 0));
+		self.m_ball.populate( self, object_transform, 4 );
+		stack.push(object_transform);
+		object_transform = mult(object_transform, translation(0, 0, 1.0));
+		object_transform = mult(object_transform, scale(.72, .72, .3));
+		//object_transform = mult(object_transform, scale(.72, .72, .3));
+		//object_transform = mult(object_transform, rotation(90, 1, 0, 0));
+
+		self.m_fan.populate(self, 8, object_transform);
+		object_transform = stack.pop();
+		//object_transform = stack.pop();
+		//object_transform = mult(object_transform, translation(0, 0, -1.0));
+
+		//self.m_ball.populate( self, object_transform, 4 );
+		//object_transform = mult(object_transform, translation(0, -1.0, 0));
+		//object_transform = mult(object_transform, rotation(90, 1, 0, 0));
+		//object_transform = mult(object_transform, scale(.72, .3, .72));
+		//object_transform = mult(object_transform, scale(.72, .72, .3));
+		//object_transform = mult(object_transform, rotation(90, 1, 0, 0));
+
+		//self.m_fan.populate(self, 8, object_transform);
+	})(this);
+	this.init_buffers();
+}
+inherit(balloon, shape);
+
+
+function capped_cylinder() // Combine a tube and two flattened triangle fans to make a solid cylinder
+ {
+ shape.call(this); // Inherit class shape’s array members by calling parent constructor
+
+ this.populate = ( function (self)
+ {
+ self.m_tube = new cylindrical_strip(); self.m_fan = new triangle_fan_full;
+ var stack = [];
+ var object_transform = mat4();
+ self.m_tube.populate( self, 10, object_transform );
+ object_transform = mult( object_transform, translation(0, 0, .5));
+ stack.push( object_transform );
+ object_transform = mult( object_transform, scale(1, 1, 0));
+ self.m_fan.populate( self, 10, object_transform )
+ object_transform = stack.pop();
+ object_transform = mult( object_transform, translation(0, 0, -.5)); // What if I tried doing this without the pop?
+ object_transform = mult( object_transform, scale(1, 1, 0));
+ self.m_fan.populate( self, 10, object_transform )
+ } )(this);
+ this.init_buffers(); // Send the final arrays to the graphics card into new buffers
+ }
+inherit(capped_cylinder, shape);
+
+
+
+
+function triangle()
+{
+ shape.call(this); // Inherit class shape’s array members by calling parent constructor
+ this.populate();
+ this.init_buffers(); // Send arrays to the graphics card into new buffers
+}
+inherit(triangle, shape);
+triangle.prototype.populate = function()
+{
+ this.vertices.push( vec3(0,0,0), vec3(0,1,0), vec3(1,0,0) );
+ this.normals.push( vec3(0,0,1), vec3(0,0,1), vec3(0,0,1) );
+ this.texture_coords.push( vec2(0,0), vec2(0,1), vec2(1,0) );
+ this.indices.push( 0, 1, 2 );
+};
+
+
